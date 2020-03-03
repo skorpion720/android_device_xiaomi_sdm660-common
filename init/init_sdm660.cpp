@@ -34,9 +34,7 @@
 #include <sys/sysinfo.h>
 #include <unistd.h>
 
-#include <android-base/file.h>
 #include <android-base/properties.h>
-#include <android-base/strings.h>
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include <sys/_system_properties.h>
 
@@ -45,8 +43,6 @@
 
 using android::base::GetProperty;
 using android::init::property_set;
-using android::base::ReadFileToString;
-using android::base::Trim;
 
 char const *heapstartsize;
 char const *heapgrowthlimit;
@@ -54,44 +50,49 @@ char const *heapsize;
 char const *heapminfree;
 char const *heapmaxfree;
 
-void property_override(char const prop[], char const value[])
+void check_device()
 {
-    prop_info *pi;
+  struct sysinfo sys;
 
-    pi = (prop_info*) __system_property_find(prop);
-    if (pi)
-        __system_property_update(pi, value, strlen(value));
-    else
-        __system_property_add(prop, strlen(prop), value, strlen(value));
-}
+  sysinfo(&sys);
 
-void property_override_dual(char const system_prop[],
-        char const vendor_prop[], char const value[])
-{
-    property_override(system_prop, value);
-    property_override(vendor_prop, value);
-}
-
-void vendor_load_persist_properties()
-{
-    std::string product = GetProperty("ro.product.vendor.device", "");
-    if (product.find("clover") != std::string::npos) {
-
-    std::string hw_device;
-
-    char const *hw_id_file = "/sys/devices/platform/HardwareInfo/hw_id";
-
-    ReadFileToString(hw_id_file, &hw_device);
-    if (hw_device.find("D9P") != std::string::npos) {
-        property_override("persist.sys.fp.vendor", "fpc");
-        property_override("ro.board.variant", "d9p");
-        property_override("vendor.display.lcd_density", "265");
-        property_override_dual("ro.product.model", "ro.vendor.product.model", "MI PAD 4 PLUS");
-    } else {
-        property_override("persist.sys.fp.vendor", "none");
-        property_override("ro.board.variant", "d9");
-        property_override("vendor.display.lcd_density", "320");
-        property_override_dual("ro.product.model", "ro.vendor.product.model", "MI PAD 4");
-    }
+  if (sys.totalram > 3072ull * 1024 * 1024)
+  {
+    // from - phone-xxhdpi-4096-dalvik-heap.mk
+    heapstartsize = "16m";
+    heapgrowthlimit = "256m";
+    heapsize = "512m";
+    heapminfree = "4m";
+    heapmaxfree = "8m";
   }
+  else if (sys.totalram > 2048ull * 1024 * 1024)
+  {
+    // from - phone-xxhdpi-3072-dalvik-heap.mk
+    heapstartsize = "8m";
+    heapgrowthlimit = "288m";
+    heapsize = "768m";
+    heapminfree = "512k";
+    heapmaxfree = "8m";
+  }
+  else if (sys.totalram > 4096ull * 1024 * 1024)
+  {
+    // from - phone-xxhdpi-3072-dalvik-heap.mk
+    heapstartsize = "16m";
+    heapgrowthlimit = "256m";
+    heapsize = "512m";
+    heapminfree = "8";
+    heapmaxfree = "32m";
+  }
+}
+
+void vendor_load_properties()
+{
+  check_device();
+
+  property_set("dalvik.vm.heapstartsize", heapstartsize);
+  property_set("dalvik.vm.heapgrowthlimit", heapgrowthlimit);
+  property_set("dalvik.vm.heapsize", heapsize);
+  property_set("dalvik.vm.heaptargetutilization", "0.75");
+  property_set("dalvik.vm.heapminfree", heapminfree);
+  property_set("dalvik.vm.heapmaxfree", heapmaxfree);
 }
