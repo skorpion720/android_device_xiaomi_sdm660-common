@@ -437,6 +437,7 @@ PRODUCT_PACKAGES += \
     qti_telephony_utils.xml \
     rild \
     telephony-ext
+	qti-telephony-common
 
 # RIL JAR
 PRODUCT_BOOT_JARS += \
