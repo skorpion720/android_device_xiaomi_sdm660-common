@@ -437,7 +437,6 @@ PRODUCT_PACKAGES += \
     qti_telephony_utils.xml \
     rild \
     telephony-ext
-	qti-telephony-common
 
 # RIL JAR
 PRODUCT_BOOT_JARS += \
@@ -526,10 +525,6 @@ PRODUCT_PACKAGES += \
 # WiFi Display JAR
 PRODUCT_BOOT_JARS += \
     WfdCommon
-
-# Wallpapers
-PRODUCT_PACKAGES += \
-    PixelLiveWallpaperPrebuilt
 
 # Device-specific settings
 PRODUCT_PACKAGES += \
